@@ -12,25 +12,25 @@ public class GameMaster {
         // to see how IntelliJ IDEA suggests fixing it.
         System.out.println("");
 
-        ServerSocket serverSocket = new ServerSocket(1234);
+        ServerSocket socketServeur = new ServerSocket(1234);
 
-        System.out.println("Le serveur est ouvert\n" + serverSocket.toString());
+        System.out.println("Le serveur est ouvert\n" + socketServeur.toString());
 
-        Socket test = serverSocket.accept();
+        Socket socketClient = socketServeur.accept();
 
-        System.out.println("La connexion est établie\n" + test.toString());
+        System.out.println("La connexion est établie\n" + socketClient.toString());
 
-        InputStream input = test.getInputStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+        InputStream entree = socketClient.getInputStream();
+        BufferedReader lecteur = new BufferedReader(new InputStreamReader(entree));
 
         // String Lecture = reader.readLine();
 
 
-        String message = reader.readLine();
-        System.out.println("Message reçu : " + message);
+        String messageRecu = lecteur.readLine();
+        System.out.println("Message reçu : " + messageRecu);
 
-        test.close();
-        serverSocket.close();
+        socketClient.close();
+        socketServeur.close();
 
 
 

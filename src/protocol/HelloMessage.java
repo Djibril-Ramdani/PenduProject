@@ -7,14 +7,14 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 
 public class HelloMessage {
-    private String adresseIpGameMaster;
+    private String adresseIpMaitreDuJeu;
     private int adressePort;
 
-    public HelloMessage(String adresseIpGameMaster, int adressePort) throws IOException {
-        this.adresseIpGameMaster = adresseIpGameMaster;
+    public HelloMessage(String adresseIpMaitreDuJeu, int adressePort) throws IOException {
+        this.adresseIpMaitreDuJeu = adresseIpMaitreDuJeu;
         this.adressePort = adressePort;
-        if (adresseIpGameMaster == null)
-            System.out.println("Adresse IP Game Master is null");
+        if (adresseIpMaitreDuJeu == null)
+            System.out.println("L'adresse IP du maître du jeu est nulle");
         else if (adressePort == 2025 ) {
             System.out.println("Le port doit être différent de 2025");
 
@@ -24,11 +24,11 @@ public class HelloMessage {
 
         OutputStream output = socket.getOutputStream();
 
-        BufferedWriter test = new BufferedWriter(new OutputStreamWriter(output));
+        BufferedWriter ecrivain = new BufferedWriter(new OutputStreamWriter(output));
 
-        test.write("HELLO");
-        test.newLine();
-        test.flush();
+        ecrivain.write("HELLO");
+        ecrivain.newLine();
+        ecrivain.flush();
 
     }
 }
