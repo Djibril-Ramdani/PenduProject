@@ -1,34 +1,40 @@
 package protocol;
 
-import java.io.BufferedWriter;
+
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
 
 public class HelloMessage {
-    private String adresseIpMaitreDuJeu;
-    private int adressePort;
 
-    public HelloMessage(String adresseIpMaitreDuJeu, int adressePort) throws IOException {
-        this.adresseIpMaitreDuJeu = adresseIpMaitreDuJeu;
-        this.adressePort = adressePort;
-        if (adresseIpMaitreDuJeu == null)
-            System.out.println("L'adresse IP du maître du jeu est nulle");
-        else if (adressePort == 2025 ) {
-            System.out.println("Le port doit être différent de 2025");
+    String adresseIp;
+    int numeroPort;
 
+    public HelloMessage(String adresseIp, int numeroPort){
+       this.adresseIp = adresseIp;
+       this.numeroPort = numeroPort;
+    }
+
+    public Boolean verificationHello(){
+        if(this.adresseIp == null || this.adresseIp.isEmpty()){
+            return false;
+        }else if(this.numeroPort ==2025){
+            return false;
         }
+        return true;
+    }
 
-        Socket socket = new Socket("adresseIpGameMaster", adressePort);
+    public String envoyerHello(){
+        return "HELLO \n" + adresseIp + "\n" + numeroPort;
+    }
 
-        OutputStream output = socket.getOutputStream();
-
-        BufferedWriter ecrivain = new BufferedWriter(new OutputStreamWriter(output));
-
-        ecrivain.write("HELLO");
-        ecrivain.newLine();
-        ecrivain.flush();
-
+    public HelloMessage(BufferedReader reader) throws IOException {
+        BufferedReader input = new BufferedReader(reader);
+        String line;
+        line = input.readLine();
+        adresseIp = line;
+        line = input.readLine();
+        numeroPort = Integer.parseInt(line);
+        input.close();
+        Boolean conforme = verificationHello();
     }
 }
