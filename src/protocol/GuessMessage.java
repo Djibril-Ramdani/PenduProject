@@ -10,11 +10,7 @@ public class GuessMessage {
 
     private final char letter;
 
-    /**
-     * Constructeur de parsing (Réception côté GameMaster).
-     * @param letterStr La ligne contenant la lettre reçue.
-     * @throws IllegalArgumentException Si la lettre n'est pas valide.
-     */
+
     public GuessMessage(String letterStr) throws IllegalArgumentException {
         // 1. Vérification que la chaîne n'est pas vide
         if (letterStr == null || letterStr.trim().isEmpty()) {
