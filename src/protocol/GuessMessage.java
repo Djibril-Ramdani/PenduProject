@@ -1,55 +1,74 @@
 package protocol;
 
 /**
- * Représente le message GUESS envoyé par le PlayerGuesser au GameMaster.
- * Format :
- * GUESS
- * <lettre>
+ * Représente un message GUESS envoyé par le joueur au GameMaster.
+ * * Spécification du PDF :
+ * - Format : "GUESS" suivi d'une ligne contenant la lettre .
+ * - Validation : La lettre doit être minuscule ou bien "_" .
  */
 public class GuessMessage {
 
     private final char letter;
 
-
+    /**
+     * Constructeur pour la RÉCEPTION (côté GameMaster).
+     * Parse la ligne reçue et valide le contenu.
+     *
+     * @param letterStr La ligne de texte contenant la lettre proposée.
+     * @throws IllegalArgumentException Si la ligne est vide, contient plus d'un caractère, ou un caractère interdit.
+     */
     public GuessMessage(String letterStr) throws IllegalArgumentException {
-        // 1. Vérification que la chaîne n'est pas vide
+        // On verifie si y'a du contenu
         if (letterStr == null || letterStr.trim().isEmpty()) {
             throw new IllegalArgumentException("Message GUESS invalide : Aucune lettre fournie.");
         }
 
+        // On nettoie pour avoir que la lettre
         String cleaned = letterStr.trim();
 
-        // 2. Vérification de la longueur (doit être exactement 1 caractère)
+        // On verfie la taille ( on veut 1)
         if (cleaned.length() != 1) {
-            throw new IllegalArgumentException("Message GUESS invalide : Une seule lettre attendue.");
+            throw new IllegalArgumentException("Message GUESS invalide : Une seule lettre attendue (reçu: " + cleaned + ").");
         }
 
         char c = cleaned.charAt(0);
 
-        // 3. Validation du contenu (Règle PDF page 4 : minuscule ou "_")
-        // On accepte '_' (pour quitter) OU une lettre minuscule entre 'a' et 'z'.
-        if (c != '_' && (c < 'a' || c > 'z')) {
-            throw new IllegalArgumentException("Message GUESS invalide : Caractère interdit '" + c + "'. Seules les minuscules ou '_' sont autorisées.");
+        // Condition pour être validé
+        //
+        boolean isLowerCase = (c >= 'a' && c <= 'z');
+        boolean isUnderscore = (c == '_');
+
+        if (!isLowerCase && !isUnderscore) {
+            throw new IllegalArgumentException("Message GUESS invalide : Caractère '" + c + "' interdit. Seules les minuscules et '_' sont autorisés.");
         }
 
         this.letter = c;
     }
 
     /**
-     * Constructeur pour l'envoi (Côté PlayerGuesser).
+     * Constructeur pour l'ENVOI (côté PlayerGuesser).
+     * Crée un message prêt à partir avec une lettre déjà validée ou brute.
+     *
+     * @param letter Le caractère à envoyer.
      */
     public GuessMessage(char letter) {
+
         this.letter = letter;
     }
 
     /**
-     * Formate le message pour l'envoi réseau.
-     * Exemple : "GUESS\na\n"
+     * Génère la chaîne complète à envoyer sur le réseau.
+     * Respecte le protocole ligne par ligne.
+     * * @return Le message formaté : "GUESS\n<lettre>\n"
      */
     public String toNetworkString() {
         return "GUESS\n" + this.letter + "\n";
     }
 
+    /**
+     * Récupère la lettre contenue dans le message.
+     * @return La lettre validée.
+     */
     public char getLetter() {
         return letter;
     }

@@ -5,7 +5,6 @@ import java.util.Set;
 
 public class GameState {
 
-    // Énumération pour les 3 états possibles du jeu (PDF page 3)
     public enum State {
         PLAYING, WIN, LOSE
     }
@@ -41,15 +40,18 @@ public class GameState {
         return true;
     }
 
-    // Retourne l'état actuel de la partie (PLAYING, WIN, LOSE)
+
     public State getCurrentState() {
         if (nombreErreurs >= ERREURS_MAX) {
-            return State.LOSE; // Défaite si 8 erreurs
+            // Défaite si on a fait 8 erreurs
+            return State.LOSE;
         }
         if (isWordGuessed()) {
-            return State.WIN;  // Victoire si tout est trouvé
+            // On a gagné si le mot est trouvé
+            return State.WIN;
         }
-        return State.PLAYING;  // Sinon, on continue
+        // Sinon, on continue le jeu
+        return State.PLAYING;
     }
 
     // Vérifie si toutes les lettres du mot ont été trouvées

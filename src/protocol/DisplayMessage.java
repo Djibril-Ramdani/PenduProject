@@ -1,11 +1,10 @@
 package protocol;
 
 import java.util.Arrays;
-import java.util.List;
 
 /**
- * Représente le message DISPLAY envoyé par le GameMaster aux PlayerDisplay.
- * Format :
+ * Représente le message DISPLAY envoyé par le GameMaster vers les PlayerDisplay.
+ * Basé sur ta capture d'écran :
  * DISPLAY
  * <mot_masque>
  * <lettres_proposees>
@@ -14,84 +13,80 @@ import java.util.List;
  */
 public class DisplayMessage {
 
-    // Les données transportées
-    public final String maskedWord;
-    public final String guessedLetters;
-    public final int errorCount;
-    public final String gameState;
+    private final String motMasque;     // Exemple : "_ o _ _ _ r"
+    private final String lettresproposees ; // Exemple : "o r z"
+    private final int nberreurs;        // Entre 0 et 8
+    private final String etatpartie;      // PLAYING, WIN ou LOSE
 
     /**
-     * Constructeur de parsing (Utilisé par PlayerDisplay à la réception).
-     * Lit les 4 lignes et vérifie toutes les règles de cohérence du PDF.
+     * Constructeur pour la RÉCEPTION (côté PlayerDisplay).
+     * Lit les données reçues et vérifie qu'elles sont cohérentes.
      */
-    public DisplayMessage(String maskedWord, String guessedLetters, String errorCountStr, String gameState) {
+    public DisplayMessage(String motMasque, String lettresproposees, String nberreurs, String etatpartie) {
 
-        // 1. Validation du mot masqué
-        if (maskedWord == null || maskedWord.trim().isEmpty()) {
-            throw new IllegalArgumentException("Message DISPLAY invalide : Le mot masqué ne peut pas être vide.");
+       // 1. Validation du mot masqué
+        if (motMasque == null || motMasque.trim().isEmpty()) {
+            throw new IllegalArgumentException("Message DISPLAY invalide : Le mot masqué est vide.");
         }
-        this.maskedWord = maskedWord;
-        this.guessedLetters = (guessedLetters == null) ? "" : guessedLetters.trim();
+        this.motMasque = motMasque;
+
+        // Les lettres proposées peuvent être vides au début, on gère le null
+        this.lettresproposees = (lettresproposees ==  null) ? "" : lettresproposees.trim();
 
         // 2. Validation du nombre d'erreurs
         try {
-            this.errorCount = Integer.parseInt(errorCountStr.trim());
+            this.nberreurs = Integer.parseInt(nberreurs.trim());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Message DISPLAY invalide : Le nombre d'erreurs doit être un entier.");
+            throw new IllegalArgumentException("Message DISPLAY invalide : Le nombre d'erreurs n'est pas un nombre.");
         }
 
-        if (this.errorCount < 0 || this.errorCount > 8) {
+        // Le PDF dit max 8 erreurs
+        if (this.nberreurs < 0 || this.nberreurs > 8) {
             throw new IllegalArgumentException("Message DISPLAY invalide : Le nombre d'erreurs doit être entre 0 et 8.");
         }
 
-        // 3. Validation de la cohérence Erreurs vs Propositions
-        // On compte combien de lettres ont été proposées (en découpant les espaces)
-        long nbLettersProposed = 0;
-        if (!this.guessedLetters.isEmpty()) {
-            nbLettersProposed = Arrays.stream(this.guessedLetters.split(" ")).count();
+        // Petite vérification logique : on ne peut pas avoir plus d'erreurs que de lettres jouées
+        long nbLettresJouees = 0;
+        if (!this.lettresproposees.isEmpty()) {
+            nbLettresJouees = Arrays.stream(this.lettresproposees.split("\\s+")).count();
+        }
+        if (this.nberreurs > nbLettresJouees) {
+            throw new IllegalArgumentException("Message DISPLAY invalide : Incohérence (plus d'erreurs que de lettres jouées).");
         }
 
-        if (this.errorCount > nbLettersProposed) {
-            throw new IllegalArgumentException("Message DISPLAY invalide : Impossible d'avoir plus d'erreurs ("
-                    + this.errorCount + ") que de lettres proposées (" + nbLettersProposed + ").");
+       // 3. Validation de l'état de la partie
+        if (!etatpartie.equals("PLAYING") && !etatpartie.equals("WIN") && !etatpartie.equals("LOSE")) {
+            throw new IllegalArgumentException("Message DISPLAY invalide : État inconnu '" + etatpartie + "'.");
         }
-
-        // 4. Validation de l'état de la partie
-        // Doit être PLAYING, WIN ou LOSE
-        if (!gameState.equals("PLAYING") && !gameState.equals("WIN") && !gameState.equals("LOSE")) {
-            throw new IllegalArgumentException("Message DISPLAY invalide : État inconnu '" + gameState + "'.");
-        }
-        this.gameState = gameState;
+        this.etatpartie = etatpartie;
     }
 
     /**
-     * Constructeur d'envoi (Utilisé par GameMaster).
-     * Prend les données brutes et prépare l'objet.
+     * Constructeur pour l'ENVOI (côté GameMaster).
+     * Construit l'objet proprement avant de l'envoyer.
      */
-    public DisplayMessage(String maskedWord, String guessedLetters, int errorCount, String gameState) {
-        this.maskedWord = maskedWord;
-        this.guessedLetters = guessedLetters;
-        this.errorCount = errorCount;
-        this.gameState = gameState;
+    public DisplayMessage(String motMasque, String lettresproposees, int nberreurs, String etatpartie) {
+        this.motMasque = motMasque;
+        this.lettresproposees = lettresproposees;
+        this.nberreurs = nberreurs;
+        this.etatpartie = etatpartie;
     }
 
     /**
-     * Formate le message pour l'envoi réseau.
-     * Le premier mot "DISPLAY" sera ajouté par le GameMaster lors de l'envoi,
-     * ou on peut l'inclure ici, mais par convention le header est souvent géré à part.
-     * Ici, on renvoie la totalité pour simplifier.
+     * Formate le message pour le réseau selon le format exact de la capture.
+     * Header "DISPLAY" + 4 lignes.
      */
     public String toNetworkString() {
         return "DISPLAY\n" +
-                maskedWord + "\n" +
-                guessedLetters + "\n" +
-                errorCount + "\n" +
-                gameState + "\n";
+                this.motMasque + "\n" +
+                this.lettresproposees + "\n" +
+                this.nberreurs + "\n" +
+                this.etatpartie + "\n";
     }
 
-    // Getters pour l'affichage côté client
-    public String getMaskedWord() { return maskedWord; }
-    public String getGuessedLetters() { return guessedLetters; }
-    public int getErrorCount() { return errorCount; }
-    public String getGameState() { return gameState; }
+    // Getters pour pouvoir afficher les infos plus tard
+    public String getmotMasque() { return motMasque; }
+    public String getGuessedLetters() { return lettresproposees; }
+    public int getErrorCount() { return nberreurs; }
+    public String getGameState() { return etatpartie; }
 }
