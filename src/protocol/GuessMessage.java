@@ -39,7 +39,7 @@ public class GuessMessage {
         boolean isUnderscore = (c == '_');
 
         if (!isLowerCase && !isUnderscore) {
-            throw new IllegalArgumentException("Message GUESS invalide : Caractère '" + c + "' interdit. Seules les minuscules et '_' sont autorisés.");
+            throw new IllegalArgumentException("Message GUESS invalide : Caractère " + c + " interdit. Seules les minuscules et '_' sont autorisés.");
         }
 
         this.letter = c;
@@ -52,8 +52,12 @@ public class GuessMessage {
      * @param letter Le caractère à envoyer.
      */
     public GuessMessage(char letter) {
+        char c = Character.toLowerCase(letter);
+        if (!((c >= 'a' && c <= 'z') || c == '_')) {
+            throw new IllegalArgumentException("Message GUESS invalide : Caractère"  + c + "interdit. Seules les minuscules et '_' sont autorisés.");
+        }
 
-        this.letter = letter;
+        this.letter = c;
     }
 
     /**

@@ -85,7 +85,7 @@ public class DisplayMessage {
     }
 
     // Getters pour pouvoir afficher les infos plus tard
-    public String getmotMasque() { return motMasque; }
+    public String getMaskedWord() { return motMasque; }
     public String getGuessedLetters() { return lettresproposees; }
     public int getErrorCount() { return nberreurs; }
     public String getGameState() { return etatpartie; }

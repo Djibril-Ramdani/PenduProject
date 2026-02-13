@@ -101,7 +101,7 @@ public class PlayerGuesser {
 
             // On récupère la string formatée via ta méthode envoyerHello()
             // envoyerHello() retourne "HELLO \n IP \n PORT"
-            writer.println(msg.envoyerHello());
+            writer.print(msg.envoyerHello());
         }
     }
 

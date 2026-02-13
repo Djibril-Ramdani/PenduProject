@@ -1,39 +1,223 @@
 package main;
 
+import protocol.DisplayMessage;
+import game.GameState;
+import protocol.GuessMessage;
+import protocol.HelloMessage;
+import game.KnownDisplays;
+
 import java.io.*;
-import java.net.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
-
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
+/**
+ * GameMaster = serveur central du jeu du pendu.
+ *
+ * Responsabilités (selon le sujet) :
+ * 1) Écouter sur un port (ici 2025)
+ * 2) Recevoir des messages de type HELLO (enregistrer les PlayerDisplay)
+ * 3) Recevoir des messages de type GUESS (mise à jour de l'état de jeu)
+ * 4) Après un GUESS valide, envoyer un DISPLAY à tous les PlayerDisplay connus
+ *
+ * Contraintes :
+ * - Mono-thread : pas de thread, on traite une connexion à la fois.
+ * - Le mot secret est fourni en argument du programme (args[0]).
+ */
 public class GameMaster {
-    public static void main(String[] args) throws IOException {
-        //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-        // to see how IntelliJ IDEA suggests fixing it.
-        System.out.println("");
 
-        ServerSocket socketServeur = new ServerSocket(1234);
+    /** Port TCP d'écoute du GameMaster */
+    private static final int MASTER_PORT = 2025;
 
-        System.out.println("Le serveur est ouvert\n" + socketServeur.toString());
+    /**
+     * Point d'entrée.
+     * Usage: java main.GameMaster <secretWord>
+     */
+    public static void main(String[] args) {
+        // -------- 1) Vérification des arguments (mode "refuse strict") --------
+        if (args.length != 1) {
+            System.err.println("Usage: java main.GameMaster <secretWord>");
+            System.exit(1);
+        }
 
-        Socket socketClient = socketServeur.accept();
+        String secretWord = args[0].trim().toLowerCase();
+        if (secretWord.isBlank()) {
+            System.err.println("Mot secret invalide: vide.");
+            System.exit(1);
+        }
 
-        System.out.println("La connexion est établie\n" + socketClient.toString());
+        // Refuse strict: uniquement a-z (pas d'accents, pas d'espaces, pas de chiffres)
+        for (int i = 0; i < secretWord.length(); i++) {
+            char c = secretWord.charAt(i);
+            if (c < 'a' || c > 'z') {
+                System.err.println("Mot invalide: seulement les caractères a-z sont acceptés.");
+                System.exit(1);
+            }
+        }
 
-        InputStream entree = socketClient.getInputStream();
-        BufferedReader lecteur = new BufferedReader(new InputStreamReader(entree));
+        // -------- 2) Initialisation du jeu et de la liste des displays --------
+        KnownDisplays knownDisplays = new KnownDisplays();
+        GameState gameState = new GameState(secretWord);
 
-        // String Lecture = reader.readLine();
+        // -------- 3) Lancement serveur --------
+        try (ServerSocket serverSocket = new ServerSocket(MASTER_PORT)) {
+            System.out.println("GameMaster démarré sur le port " + MASTER_PORT);
+            System.out.println("Mot secret chargé (" + secretWord.length() + " lettres).");
 
+            // Boucle infinie : on accepte une connexion, on traite, on ferme.
+            while (true) {
+                try (Socket clientSocket = serverSocket.accept()) {
+                    handleClient(clientSocket, knownDisplays, gameState);
+                } catch (Exception e) {
+                    // Important: on ne veut pas que le serveur meure pour un client buggué
+                    System.err.println("[GameMaster] Erreur pendant le traitement d'un client: " + e.getMessage());
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("[GameMaster] Impossible de démarrer le serveur: " + e.getMessage());
+        }
+    }
 
-        String messageRecu = lecteur.readLine();
-        System.out.println("Message reçu : " + messageRecu);
+    /**
+     * Traite une connexion entrante.
+     * Le client envoie soit:
+     * - HELLO\n<ip>\n<port>\n
+     * - GUESS\n<letter>\n
+     */
+    private static void handleClient(Socket clientSocket, KnownDisplays knownDisplays, GameState gameState) throws IOException {
 
-        socketClient.close();
-        socketServeur.close();
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)
+        );
 
+        // 1) Lire l'entête (HELLO ou GUESS), et être tolérant (trim)
+        String header = reader.readLine();
+        if (header == null) {
+            return; // connexion vide
+        }
+        header = header.trim();
 
+        // 2) Dispatcher selon le type de message
+        if ("HELLO".equals(header)) {
+            handleHello(reader, knownDisplays);
 
+        } else if ("GUESS".equals(header)) {
+            handleGuess(reader, knownDisplays, gameState);
 
+        } else {
+            // Message inconnu => on ignore
+            System.err.println("[GameMaster] Header inconnu: " + header);
+        }
+    }
+
+    /**
+     * Traitement du message HELLO :
+     * On lit ip + port puis on enregistre dans KnownDisplays.
+     */
+    private static void handleHello(BufferedReader reader, KnownDisplays knownDisplays) throws IOException {
+        try {
+            HelloMessage hello = new HelloMessage(reader); // lit ip + port depuis le reader
+            knownDisplays.add(hello.getIp(), hello.getPort());
+        } catch (Exception e) {
+            System.err.println("[GameMaster] HELLO invalide: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Traitement du message GUESS :
+     * - lit la lettre
+     * - valide via GuessMessage(String) (ton parse réseau)
+     * - met à jour GameState
+     * - diffuse un DisplayMessage à tous les displays enregistrés
+     *
+     * Choix demandé: si GUESS invalide => on ignore et on ne diffuse pas (A).
+     */
+    private static void handleGuess(BufferedReader reader, KnownDisplays knownDisplays, GameState gameState) throws IOException {
+
+        String guessLine = reader.readLine();
+        if (guessLine == null) {
+            System.err.println("[GameMaster] GUESS incomplet (lettre manquante).");
+            return;
+        }
+
+        // Validation protocolaire via ta classe GuessMessage (réception)
+        GuessMessage guessMsg;
+        try {
+            // Ici on utilise le constructeur qui valide "a-z ou _"
+            guessMsg = new GuessMessage("GUESS\n" + guessLine + "\n");
+        } catch (IllegalArgumentException e) {
+            // Choix A: on ignore, pas de diffusion
+            System.err.println("[GameMaster] GUESS invalide ignoré: " + e.getMessage());
+            return;
+        }
+
+        char letter = guessMsg.getGuess();
+
+        // Mise à jour du jeu
+        gameState.guess(letter);
+
+        // Construire la string des lettres proposées dans l'ordre, séparées par ", "
+        String proposedLetters = joinGuessedLetters(gameState.getGuessedLetters());
+
+        // Déterminer l'état du jeu (WIN/LOSE/PLAYING)
+        GameState.State state;
+        // TODO: adapte si tes méthodes s'appellent autrement que isWin()/isLose()
+        if (gameState.isWin()) {
+            state = GameState.State.WIN;
+        } else if (gameState.isLose()) {
+            state = GameState.State.LOSE;
+        } else {
+            state = GameState.State.PLAYING;
+        }
+
+        // Créer le DisplayMessage
+        DisplayMessage displayMessage = new DisplayMessage(
+                gameState.getMaskedWord(),
+                gameState.getErrors(),
+                proposedLetters,
+                state
+        );
+
+        // Diffuser à tous les PlayerDisplay enregistrés
+        broadcastDisplay(knownDisplays.getAll(), displayMessage);
+    }
+
+    /**
+     * Envoie le DISPLAY à tous les displays connus.
+     * Choix demandé: si un display est HS => on ignore l'erreur et on continue (A).
+     */
+    private static void broadcastDisplay(List<KnownDisplays.PlayerEntry> targets, DisplayMessage displayMessage) {
+        for (KnownDisplays.PlayerEntry entry : targets) {
+            try (Socket displaySocket = new Socket(entry.getIp(), entry.getPort());
+                 PrintWriter out = new PrintWriter(
+                         new OutputStreamWriter(displaySocket.getOutputStream(), StandardCharsets.UTF_8),
+                         true
+                 )) {
+
+                // Envoi du message réseau
+                // print() pour respecter exactement les \n fournis par toNetworkString()
+                out.print(displayMessage.toNetworkString());
+                out.flush();
+
+            } catch (IOException e) {
+                // Choix A: on ignore
+                System.err.println("[GameMaster] Impossible d'envoyer DISPLAY à " + entry + ": " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Transforme une liste de lettres [a, e, i, _] en "a, e, i, _" (format choisi B + ordre d'ajout 1).
+     */
+    private static String joinGuessedLetters(List<Character> guessedLetters) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < guessedLetters.size(); i++) {
+            sb.append(guessedLetters.get(i));
+            if (i < guessedLetters.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        return sb.toString();
     }
 }

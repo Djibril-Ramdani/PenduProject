@@ -24,7 +24,7 @@ public class HelloMessage {
     }
 
     public String envoyerHello(){
-        return "HELLO \n" + adresseIp + "\n" + numeroPort;
+        return "HELLO\n" + adresseIp + "\n" + numeroPort +"\n";
     }
 
     public HelloMessage(BufferedReader reader) throws IOException {
@@ -34,7 +34,13 @@ public class HelloMessage {
         adresseIp = line;
         line = input.readLine();
         numeroPort = Integer.parseInt(line);
-        input.close();
         Boolean conforme = verificationHello();
+    }
+
+    public String getIp() {
+        return adresseIp;
+    }
+    public int getPort() {
+        return numeroPort;
     }
 }
