@@ -73,7 +73,7 @@ public class GuessMessage {
      * Récupère la lettre contenue dans le message.
      * @return La lettre validée.
      */
-    public char getLetter() {
+    public char getGuess() {
         return letter;
     }
 }

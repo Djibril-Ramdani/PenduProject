@@ -35,6 +35,9 @@ public class HelloMessage {
         line = input.readLine();
         numeroPort = Integer.parseInt(line);
         Boolean conforme = verificationHello();
+        if(conforme == false){
+            throw new IllegalArgumentException("hello non valide");
+        }
     }
 
     public String getIp() {

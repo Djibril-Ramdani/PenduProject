@@ -145,7 +145,7 @@ public class GameMaster {
         GuessMessage guessMsg;
         try {
             // Ici on utilise le constructeur qui valide "a-z ou _"
-            guessMsg = new GuessMessage("GUESS\n" + guessLine + "\n");
+            guessMsg = new GuessMessage(guessLine);
         } catch (IllegalArgumentException e) {
             // Choix A: on ignore, pas de diffusion
             System.err.println("[GameMaster] GUESS invalide ignoré: " + e.getMessage());
@@ -155,29 +155,18 @@ public class GameMaster {
         char letter = guessMsg.getGuess();
 
         // Mise à jour du jeu
-        gameState.guess(letter);
+        gameState.guessLetter(letter);
 
         // Construire la string des lettres proposées dans l'ordre, séparées par ", "
-        String proposedLetters = joinGuessedLetters(gameState.getGuessedLetters());
+        String proposedLetters = gameState.getGuessedLettersString();
 
         // Déterminer l'état du jeu (WIN/LOSE/PLAYING)
-        GameState.State state;
-        // TODO: adapte si tes méthodes s'appellent autrement que isWin()/isLose()
-        if (gameState.isWin()) {
-            state = GameState.State.WIN;
-        } else if (gameState.isLose()) {
-            state = GameState.State.LOSE;
-        } else {
-            state = GameState.State.PLAYING;
-        }
-
+        String state = gameState.getCurrentState().name();
         // Créer le DisplayMessage
-        DisplayMessage displayMessage = new DisplayMessage(
-                gameState.getMaskedWord(),
-                gameState.getErrors(),
-                proposedLetters,
-                state
-        );
+        String maskedWord = gameState.getMaskedWord();
+        String errors = String.valueOf(gameState.getErrorCount());
+
+        DisplayMessage displayMessage = new DisplayMessage(maskedWord, proposedLetters,errors,state);
 
         // Diffuser à tous les PlayerDisplay enregistrés
         broadcastDisplay(knownDisplays.getAll(), displayMessage);
@@ -206,18 +195,5 @@ public class GameMaster {
             }
         }
     }
-
-    /**
-     * Transforme une liste de lettres [a, e, i, _] en "a, e, i, _" (format choisi B + ordre d'ajout 1).
-     */
-    private static String joinGuessedLetters(List<Character> guessedLetters) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < guessedLetters.size(); i++) {
-            sb.append(guessedLetters.get(i));
-            if (i < guessedLetters.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        return sb.toString();
-    }
 }
+
