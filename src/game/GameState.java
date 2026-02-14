@@ -22,17 +22,17 @@ public class GameState {
         this.nombreErreurs = 0;
     }
 
-    // Méthode principale : Traite une proposition de lettre
+    // méthode principale : Traite une proposition de lettre
     public boolean guessLetter(char lettre) {
-        // 1. Si la lettre a déjà été proposée, on l'ignore
+        //Si la lettre a déjà été proposée, on l'ignore
         if (lettresProposees.contains(lettre)) {
-            return false; // Rien ne change
+            return false;
         }
 
-        // 2. On ajoute la lettre aux propositions
+        // On ajoute la lettre aux propositions
         lettresProposees.add(lettre);
 
-        // 3. Si la lettre n'est PAS dans le mot secret, c'est une erreur (PDF page 2)
+        // Si la lettre n'est PAS dans le mot secret c'est une erreur
         if (motSecret.indexOf(lettre) == -1) {
             nombreErreurs++;
         }
@@ -43,14 +43,14 @@ public class GameState {
 
     public State getCurrentState() {
         if (nombreErreurs >= ERREURS_MAX) {
-            // Défaite si on a fait 8 erreurs
+            //Défaite si on a fait 8 erreurs
             return State.LOSE;
         }
         if (isWordGuessed()) {
-            // On a gagné si le mot est trouvé
+            //On a gagné si le mot est trouvé
             return State.WIN;
         }
-        // Sinon, on continue le jeu
+        //Sinon on continue le jeu
         return State.PLAYING;
     }
 
@@ -64,7 +64,7 @@ public class GameState {
         return true;
     }
 
-    // Génère le "mot masqué" pour l'affichage (ex: "_ o _ _")
+    // Génère le mot masqué pour l'affichage
     public String getMaskedWord() {
         StringBuilder sb = new StringBuilder();
         for (char c : motSecret.toCharArray()) {

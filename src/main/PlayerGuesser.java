@@ -8,11 +8,11 @@ import protocol.HelloMessage;
 
 public class PlayerGuesser {
 
-    // Port fixe du GameMaster selon le sujet
+    // Port fixe du GameMaster
     private static final int GM_PORT = 2025;
 
     public static void main(String[] args) {
-        // 1. Vérification des arguments [cite: 91]
+        // Vérification des arguments
         if (args.length != 3) {
             System.err.println("Usage: java PlayerGuesser <IP_GameMaster> <IP_PlayerDisplay> <Port_PlayerDisplay>");
             return;
@@ -23,15 +23,15 @@ public class PlayerGuesser {
         int displayPort = Integer.parseInt(args[2]);
 
         try {
-            // 2. Envoi automatique du message HELLO au démarrage [cite: 92]
+            // Envoi automatique du message HELLO au démarrage
             System.out.println("Connexion au GameMaster (" + gmIp + ")...");
 
-            // Utilisation de ta méthode spécifique pour HELLO
+            // Utilisation de la méthode spécifique pour HELLO
             sendHelloCustom(gmIp, displayIp, displayPort);
 
             System.out.println("Enregistré avec succès !");
 
-            // 3. Boucle de jeu : Lecture de l'entrée standard [cite: 93]
+            // Boucle de jeu
             Scanner scanner = new Scanner(System.in);
             boolean playing = true;
 
@@ -42,16 +42,15 @@ public class PlayerGuesser {
                 // Si ligne vide, on ignore et on recommence
                 if (input.isEmpty()) continue;
 
-                // Si "_", on arrête le programme [cite: 100]
+                // Si "_", on arrête le programme
                 if (input.equals("_")) {
                     System.out.println("Arrêt du PlayerGuesser.");
                     playing = false;
-                    // On envoie quand même le signal au serveur pour être propre
                     sendGuess(gmIp, '_');
                     break;
                 }
 
-                // Vérification locale : doit être une seule lettre [cite: 95]
+                // Vérification locale : doit être une seule lettre
                 if (input.length() != 1) {
                     System.out.println("Erreur : Veuillez entrer une seule lettre.");
                     continue;
@@ -59,15 +58,15 @@ public class PlayerGuesser {
 
                 char letter = input.charAt(0);
 
-               // 4. Tentative d'envoi du message GUESS
+               // Tentative d'envoi du message GUESS
                 try {
                     sendGuess(gmIp, letter);
-                    // Si succès, on revient au début de la boucle (étape 6) [cite: 98]
+                    // Si succès, on revient au début de la boucle
                 } catch (IOException e) {
                     // En cas d'échec réseau
                     System.err.println("Erreur de communication avec le GameMaster : " + e.getMessage());
                 } catch (IllegalArgumentException e) {
-                    // Si la lettre est rejetée par la validation (ex: majuscule)
+                    // Si la lettre est rejetée
                     System.err.println("Lettre invalide : " + e.getMessage());
                 }
             }

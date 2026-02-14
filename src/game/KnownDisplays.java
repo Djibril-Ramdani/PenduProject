@@ -3,13 +3,10 @@ package game;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Gère la liste des joueurs enregistrés (couples IP + Port).
- * Référence PDF : "KnownDisplays: gère la liste des couples (IP, port) des PlayerDisplay."
- */
+
 public class KnownDisplays {
 
-    // Une petite classe interne pour stocker proprement le couple IP/Port
+    // classe interne pour stocker IP/Port
     public static class PlayerEntry {
         private final String ip;
         private final int port;
@@ -50,11 +47,7 @@ public class KnownDisplays {
         this.displays = new ArrayList<>();
     }
 
-    /**
-     * Enregistre un nouveau PlayerDisplay.
-     * Appelé quand le GameMaster reçoit un message HELLO.
-     * "Le GameMaster enregistre le couple (IP, port)"
-     */
+
     public void add(String ip, int port) {
         if (ip == null || ip.isBlank()) {
             throw new IllegalArgumentException("Adresse IP n'est pas valide.");
@@ -65,7 +58,7 @@ public class KnownDisplays {
 
         PlayerEntry newPlayer = new PlayerEntry(ip, port);
 
-        // Modif 3: éviter les doublons
+        // éviter les doublons
         if (displays.contains(newPlayer)) {
             System.out.println("Joueur déjà enregistré : " + newPlayer);
             return;
@@ -75,12 +68,6 @@ public class KnownDisplays {
         System.out.println("Nouveau joueur enregistré : " + newPlayer);
     }
 
-    /**
-     * Retourne la liste des joueurs pour permettre la diffusion.
-     * Le GameMaster va boucler sur cette liste pour envoyer les messages DISPLAY.
-     * "...envoie l'état complet du jeu à tous les PlayerDisplay enregistrés"
-     */
-    // Remplace getAll() par celui-ci (Modif 2)
     public List<PlayerEntry> getAll() {
         return new ArrayList<>(displays);
     }

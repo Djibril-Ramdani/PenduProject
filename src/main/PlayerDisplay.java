@@ -7,7 +7,7 @@ import protocol.DisplayMessage; // On utilise ta classe pour stocker proprement 
 public class PlayerDisplay {
 
     public static void main(String[] args) {
-        // 1. Vérification de l'argument (Port d'écoute) [cite: 104]
+        // Vérification de l'argument (Port d'écoute)
         if (args.length != 1) {
             System.err.println("Usage: java PlayerDisplay <port>");
             return;
@@ -15,7 +15,7 @@ public class PlayerDisplay {
 
         int port = Integer.parseInt(args[0]);
 
-        // Vérification de sécurité : le port ne doit pas être 2025 [cite: 104]
+        // le port ne doit pas être 2025
         if (port == 2025) {
             System.err.println("Erreur : Le port 2025 est réservé au GameMaster.");
             return;
@@ -24,7 +24,7 @@ public class PlayerDisplay {
         System.out.println("=== JEU DU PENDU - AFFICHAGE ===");
         System.out.println("En attente de connexion du GameMaster sur le port " + port + "...");
 
-        // 2. Écoute passive (Serveur TCP)
+        // Écoute passive (Serveur TCP)
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             boolean gameRunning = true;
 
@@ -33,11 +33,11 @@ public class PlayerDisplay {
                 try (Socket socket = serverSocket.accept();
                      BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-                    // 3. Lecture de la première ligne (Header)
+                    // Lecture de la première ligne (Header)
                     String header = reader.readLine();
 
                     if ("DISPLAY".equals(header)) {
-                        // 4. Lecture des 4 lignes de données
+                        // Lecture des 4 lignes de données
                         String maskedWord = reader.readLine();
                         String guessedLetters = reader.readLine();
                         String errorCountStr = reader.readLine();
@@ -46,10 +46,10 @@ public class PlayerDisplay {
                         // Création de l'objet message pour valider les données
                         DisplayMessage msg = new DisplayMessage(maskedWord, guessedLetters, errorCountStr, gameState);
 
-                        // 5. Affichage propre à l'écran [cite: 109]
+                        // Affichage propre à l'écran
                         afficherInterface(msg);
 
-                        // 6. Arrêt si la partie est finie
+                        // Arrêt si la partie est finie
                         if ("WIN".equals(msg.getGameState()) || "LOSE".equals(msg.getGameState())) {
                             System.out.println(">>> Fin de la partie. Fermeture de l'affichage. <<<");
                             gameRunning = false;
@@ -71,11 +71,7 @@ public class PlayerDisplay {
         }
     }
 
-    /**
-     * Affiche l'état du jeu avec un joli dessin ASCII.
-     */
     private static void afficherInterface(DisplayMessage msg) {
-        // On "nettoie" un peu la console (saut de lignes) pour la lisibilité
         System.out.println("\n\n\n\n\n");
         System.out.println("========================================");
 
@@ -98,12 +94,12 @@ public class PlayerDisplay {
         System.out.println("========================================");
     }
 
-    // Ajoute des espaces entre les lettres pour faire plus joli (ex: "_ a _" au lieu de "_a_")
+    // Ajout des espaces entre les lettres pour faire plus joli
     private static String espacerMot(String word) {
         return word.replace("", " ").trim();
     }
 
-    // Petit bonus graphique : Dessine le pendu étape par étape
+    //Dessin du pendu étape par étape
     private static void dessinerPendu(int erreurs) {
         switch (erreurs) {
             case 0: System.out.println("\n\n\n\n"); break;
